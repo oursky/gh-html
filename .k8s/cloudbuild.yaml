@@ -1,0 +1,14 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'build'
+  - '--cache-from'
+  - 'gcr.io/oursky-kube/gh-html:latest'
+  - '--tag'
+  - 'gcr.io/oursky-kube/gh-html:$SHORT_SHA'
+  - '--tag'
+  - 'gcr.io/oursky-kube/gh-html:latest'
+  - './server'
+images:
+- 'gcr.io/oursky-kube/gh-html:$SHORT_SHA'
+- 'gcr.io/oursky-kube/gh-html:latest'

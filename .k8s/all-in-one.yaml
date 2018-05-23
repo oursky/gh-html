@@ -1,0 +1,84 @@
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: api-server
+  name: api-server
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: api-server
+    spec:
+      containers:
+      # redis
+      - name: redis
+        image: redis:4.0.9-alpine
+        ports:
+        - containerPort: 6379
+      # gh-html
+      - name: gh-html
+        image: gcr.io/oursky-kube/gh-html:latest
+        env:
+        - name: APP_SERVER_PORT
+          value: "8080"
+        - name: APP_REDIS
+          value: "redis://:@localhost:6379/0"
+        - name: APP_SERVER_BASE
+          value: https://dochub.pandawork.com
+        - name: APP_SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: APP_SESSION_SECRET
+        - name: APP_GH_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: APP_GH_CLIENTID
+        - name: APP_GH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: APP_GH_SECRET
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: api-server
+  name: api-server
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: api-server
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: api-server
+  name: api-server
+  annotations:
+    ingress.kubernetes.io/proxy-body-size: 10m
+spec:
+  rules:
+  - host: dochub.pandawork.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: api-server
+          servicePort: 80
+  tls:
+  - hosts:
+    - dochub.pandawork.com
