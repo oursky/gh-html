@@ -69,6 +69,7 @@ metadata:
     app: api-server
   name: api-server
   annotations:
+    kubernetes.io/tls-acme: "true"
     ingress.kubernetes.io/proxy-body-size: 10m
 spec:
   rules:
@@ -82,3 +83,4 @@ spec:
   tls:
   - hosts:
     - dochub.pandawork.com
+    secretName: dochub
