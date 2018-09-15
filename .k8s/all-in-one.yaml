@@ -18,6 +18,14 @@ spec:
         image: redis:4.0.9-alpine
         ports:
         - containerPort: 6379
+        command: ["redis-server"]
+        args: ["--requirepass", "$(REDIS_PASS)"]
+        env:
+        - name: REDIS_PASS
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: REDIS_PASS
       # gh-html
       - name: gh-html
         image: gcr.io/oursky-kube/gh-html:latest
@@ -25,7 +33,10 @@ spec:
         - name: APP_SERVER_PORT
           value: "8080"
         - name: APP_REDIS
-          value: "redis://:@localhost:6379/0"
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: APP_REDIS
         - name: APP_SERVER_BASE
           value: https://dochub.pandawork.com
         - name: APP_SESSION_SECRET
@@ -33,6 +44,8 @@ spec:
             secretKeyRef:
               name: app-secret
               key: APP_SESSION_SECRET
+        - name: APP_SESSION_TTL
+          value: "86400"
         - name: APP_GH_CLIENTID
           valueFrom:
             secretKeyRef:
