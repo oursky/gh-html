@@ -67,3 +67,12 @@ typings/
 
 # apidoc
 apidoc/
+
+*.code-workspace
+
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cert
+*.key

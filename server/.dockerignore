@@ -1,7 +1,15 @@
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cert
+*.key
 .env
 .env.bak
 .env.tmp
+docker-compose.yml
 docker-compose.override.yml
 
+.DS_Store
 node_modules/
 dist/

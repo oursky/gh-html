@@ -6,7 +6,7 @@ import * as express_session from "express-session";
 import * as bodyParser from "body-parser";
 import * as redis from "redis";
 import * as redisConnect from "connect-redis";
-import { APPCONFIG } from "./appconfig";
+import { AppConfig } from "./appconfig";
 
 
 export class AppServer {
@@ -14,28 +14,30 @@ export class AppServer {
     private port: number;
     public app: express.Application;
 
-    constructor(id: number) {
+    constructor(id: number, config: AppConfig) {
         this.id = id;
-        this.port = APPCONFIG.server_port;
+        this.port = config.server_port;
         // -------------------------------------------------------------
         // SETUP EXPRESS
         // -------------------------------------------------------------
         this.app = express();
         this.app.set("trust proxy", 1);
+        this.app.set("etag", false);
+        this.app.set("x-powered-by", false);
         // session
         // -------------------------------------------------------------
         const session_options: any = {
-            secret: APPCONFIG.session_secret,
+            secret: config.session_secret,
             resave: false,
             saveUninitialized: true,
             cookie: {
-                maxAge: APPCONFIG.session_ttl,
+                maxAge: config.session_ttl,
                 secure: (this.app.get("env") === "production")
             }
         };
         // redis
-        if (APPCONFIG.redis) {
-            const url = URL.parse(APPCONFIG.redis);
+        if (config.redis) {
+            const url = URL.parse(config.redis);
             // const user = url.auth.split(':')[0];
             const host = url.hostname;
             const port = parseInt(url.port);
@@ -49,19 +51,13 @@ export class AppServer {
                     host: host,
                     port: port
                 }),
-                ttl: APPCONFIG.session_ttl
+                ttl: config.session_ttl
             });
             session_options.store = store;
         }
         this.app.use(express_session(session_options));
         this.app.use(bodyParser.json())
                 .use(express.static("html"));
-        // Remove useless header
-        // -------------------------------------------------------------
-        this.app.use(function (req: express.Request, res: express.Response, next: any) {
-            res.removeHeader("X-Powered-By");
-            next();
-        });
         // Handle bad JSON request
         // -------------------------------------------------------------
         this.app.use(function(err: any, req: express.Request, res: express.Response, next: any) {
@@ -73,9 +69,9 @@ export class AppServer {
         // -------------------------------------------------------------
         fs.readdirSync(path.join(__dirname, "./route"))
           .filter(file => file.endsWith(".js"))
-          .forEach((module) => {
-             const mod = require("./route/" + module);
-             const uri = mod["uri"] || "/" + module.slice(0, -path.extname(module).length);
+          .forEach((file) => {
+             const mod = require("./route/" + file);
+             const uri = mod["uri"] || "/" + file.slice(0, -path.extname(file).length);
              console.log(`[D] Register URI: ${uri}`);
              for (const method of Object.keys(mod)) {
                 switch (method) {
